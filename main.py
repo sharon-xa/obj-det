@@ -29,16 +29,24 @@ while cap.isOpened():
 
         # Get the boxes and track IDs
         if results[0].boxes is not None:
+            # Extract bounding box coordinates (center_x, center_y, width, height)
             boxes = results[0].boxes.xywh.cpu()
+
+            # Extract unique track IDs for each detected object
             track_ids = results[0].boxes.id
+
+            # Convert IDs to a list if they exist
             if track_ids is not None:
                 track_ids = track_ids.int().cpu().tolist()
             else:
+                # If no track IDs are available, initialize an empty list
                 track_ids = []
         else:
+            # If no objects are detected, initialize empty lists for boxes and track IDs
             boxes = []
             track_ids = []
 
+        # generate a visualization of the current frame with YOLO-detected objects
         annotated_frame = results[0].plot()
 
         # Plot the tracks
@@ -53,23 +61,24 @@ while cap.isOpened():
                 track.pop(0)
 
             # Calculate movement direction
-            if len(track) > 1:
-                prev_x, prev_y = track[-2]
-                dx = center[0] - prev_x
-                dy = center[1] - prev_y
+            if len(track) > 1: # Ensure there is enough history to calculate movement
+                prev_x, prev_y = track[-2] # Retrieve the second-to-last position (previous frame)
+                dx = center[0] - prev_x # Calculate the horizontal change (x-axis movement)
+                dy = center[1] - prev_y # Calculate the vertical change (y-axis movement)
 
                 # Determine direction based on dx and dy
-                if abs(dx) > abs(dy):  # Horizontal movement
-                    if dx > 0:
+                if abs(dx) > abs(dy): # If the horizontal movement is greater than vertical
+                    if dx > 0: # Positive dx indicates movement to the right
                         directions[track_id] = "Right"
                     else:
                         directions[track_id] = "Left"
-                else:  # Vertical movement
-                    if dy > 0:
+                else: # If the vertical movement is greater than or equal to horizontal
+                    if dy > 0: # Positive dy indicates movement downward
                         directions[track_id] = "Down"
                     else:
                         directions[track_id] = "Up"
             else:
+                # If there is not enough tracking history, assume the object is stationary
                 directions[track_id] = "Stationary"
 
             # Draw the tracking lines
